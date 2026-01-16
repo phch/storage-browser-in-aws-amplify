@@ -1,40 +1,29 @@
-/**
- * Central configuration for company access control
- * Define all companies and their associated user groups here
- */
-
 export interface CompanyConfig {
   name: string;
   prefix: string;
   rwGroups: string[];
+  roGroups: string[];
 }
 
 export const companies: CompanyConfig[] = [
   {
-    name: 'Company 1',
-    prefix: 'company-1',
-    rwGroups: ['company-1-rw'],
-  },
-  {
-    name: 'Company 2',
-    prefix: 'company-2',
-    rwGroups: ['company-2-rw'],
-  },
-  {
     name: 'Portfolio Company A',
     prefix: 'portco-a',
     rwGroups: ['portco-a-rw'],
+    roGroups: []
   },
-  // Add more companies here as needed
+  {
+    name: 'Portfolio Company B',
+    prefix: 'portco-b',
+    rwGroups: ['portco-b-rw'],
+    roGroups: ['portco-b-ro'],
+  },
 ];
 
-/**
- * Get all group names for Cognito configuration
- */
 export function getAllGroups(): string[] {
   const groups: string[] = [];
   companies.forEach(company => {
-    groups.push(...company.rwGroups);
+    groups.push(...company.rwGroups, ...company.roGroups);
   });
   return groups;
 }
@@ -53,6 +42,10 @@ export function buildStorageAccessRules(allow: any): Record<string, any[]> {
       rules.push(
         allow.groups(company.rwGroups).to(['read', 'write', 'delete'])
       );
+    }
+    // Read-only groups get read access
+    if (company.roGroups.length > 0) {
+      rules.push(allow.groups(company.roGroups).to(['read']));
     }
 
     accessRules[`${company.prefix}/*`] = rules;
